@@ -17,23 +17,26 @@
 class SceneBasic_Uniform : public Scene
 {
 private:
-    //GLuint vaoHandle;
-    GLSLProgram prog;
-    GLSLProgram skyProg;
-    //float angle;
-
-    GLuint obj1Tex;
-    GLuint obj2Tex;
-    GLuint overlapTex;
-    GLuint cubeTex;
-
+    GLSLProgram volumeProg, renderProg, compProg;
+    GLuint colorDepthFBO, fsQuad;
+    GLuint spotTex, brickTex;
+    
     Plane plane;
-    std::unique_ptr<ObjMesh> mesh;
-    SkyBox sky;
+    std::unique_ptr<ObjMesh> spot;
+
+    glm::vec4 lightPos;
+    float angle, tPrev, rotSpeed;
+
+    void setMatrices(GLSLProgram&);
 
     void compile();
-    void setMatrices();
-    void setSkyMatrices();
+
+    void setupFBO();
+    void drawScene(GLSLProgram&, bool);
+    void pass1();
+    void pass2();
+    void pass3();
+    void updateLight();
 
 public:
     SceneBasic_Uniform();

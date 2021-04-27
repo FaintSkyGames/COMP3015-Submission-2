@@ -1,109 +1,114 @@
 #version 460
 
-in vec3 Position;
 in vec3 Normal;
-in vec2 TexCoord;
+in vec3 Position;
+in vec4 ShadowCoord;
 
-layout (location = 0) out vec4 FragColor;
-layout (binding = 0) uniform sampler2D objTex;
-layout (binding = 1) uniform sampler2D crackTex;
+uniform sampler2DShadow ShadowMap;
+uniform sampler3D OffsetTex;
+uniform float Radius;
+uniform vec3 OffsetTexSize; // (width, height, depth)
 
-uniform mat4 ModelViewMatrix;
-
-uniform struct LightBulbInfo {
-    vec4 Position; // Light position in eye coords
-    vec3 La; // Ambient light intensity
-    vec3 L; // Diffuse and specular light intensity
-} pointLight;
-
-uniform struct SpotLightInfo {
-    vec3 Position; // Light position in eye coords
-    vec3 La; // Ambient light intensity
-    vec3 L; // Diffuse and specular light intensity
-    vec3 Direction; // Direction of spotlight in cam coords
-    float Exponent; // Angular attenuation exponent
-    float CutOff; // CutOff angle (between 0 & pi/2)
-} spotLight[2];
+uniform struct LightInfo {
+    vec4 Position;
+    vec3 Intensity;
+} Light;
 
 uniform struct MaterialInfo {
-    vec3 Ka; // Ambient reflectivity
-    vec3 Kd; // diffuse reflectivity
-    vec3 Ks; // specular reflectivity
-    float Shininess; // specular shininess factor
+    vec3 Ka;
+    vec3 Kd;
+    vec3 Ks;
+    float Shininess;
 } Material;
 
-vec3 blinnPhong(vec3 position, vec3 n){
-    //extract colour for each fragment
-    vec3 objTexColor = texture(objTex, TexCoord).rgb; // 1 texture
-    vec4 overlapTexColor = texture(crackTex, TexCoord).rgba;
-    //vec3 texColor = objTexColor;
-    vec3 texColor = mix(objTexColor.rgb, overlapTexColor.rgb, overlapTexColor.a);
 
-    // calculate ambient
-    vec3 ambient = texColor * Material.Ka * pointLight.La;
+layout (location = 0) out vec4 FragColor;
 
-    // calculate diffuse
-    vec3 s = normalize(vec3(pointLight.Position) - position);
-    float sDotN = dot(s, n);
-    vec3 diffuse = Material.Kd * sDotN * texColor;
-
-    // calculate specular here
-    vec3 spec = vec3(0.0);
-
-    if(sDotN > 0.0){
-        vec3 v = normalize(-position.xyz);
-        vec3 h = normalize(v + s);
-        spec = Material.Ks * pow(max(dot(h,n), 0.0), Material.Shininess);
-    }
-
-    //return ambient + diffuse + spec;
-    return ambient + pointLight.L * (diffuse + spec);
-}
-
-vec3 blinnPhongSpot(int light, vec3 position, vec3 n){
-    // calculate ambient
-    vec3 ambient = spotLight[light].La * Material.Ka;
-    vec3 s = normalize(vec3(spotLight[light].Position) - position);
-
-    float cosAng = dot(-s, normalize(spotLight[light].Direction)); //cosine of angle
-    float angle = acos(cosAng); // givves actual angle
-    float spotScale = 0.0;
-
-    vec3 diffuse;
-    vec3 spec = vec3(0.0);
-
-    if(angle < spotLight[light].CutOff){
-        spotScale = pow(cosAng, spotLight[light].Exponent);
-        float sDotN = dot(s, n);
-        diffuse = Material.Kd * sDotN;
-
-        // calculate specular here
-        if(sDotN > 0.0){
-            vec3 v = normalize(-position.xyz);
-            vec3 h = normalize(v + s);
-            spec = Material.Ks * pow(max(dot(h,n), 0.0), Material.Shininess);
-        }
-        return ambient + spotScale * spotLight[light].L * (diffuse + spec);
-    }
-
-    return ambient + spotScale * spotLight[light].L * (diffuse + spec);
-}
-
-
-void main()
+vec3 phongModelDiffAndSpec()
 {
-    //vec3 n = normalize(NormalMatrix * Normal); // normal vector
-    vec4 p = ModelViewMatrix * vec4(Position, 1.0f); // position
+    vec3 n = Normal;
+    vec3 s = normalize(vec3(Light.Position) - Position);
+    vec3 v = normalize(-Position.xyz);
+    vec3 r = reflect(-s, n);
+    
+    float sDotN = max(dot(s, n), 0.0);
+    vec3 diffuse = Light.Intensity * Material.Kd * sDotN;
+    
+    vec3 spec = vec3(0.0);
+    if(sDotN > 0.0)
+    {
+        spec = Light.Intensity * Material.Ks * pow(max(dot(r, v), 0.0), Material.Shininess);
+    }
 
-    vec3 camCoords = vec3(p); // direction from the surface to the light
+    return diffuse + spec;
+}
 
-    vec4 color;
-    color = vec4(blinnPhong(camCoords, Normal), 1);
-    color += vec4(blinnPhongSpot(0, camCoords, Normal),1);
-    color += vec4(blinnPhongSpot(1, camCoords, Normal),1);
-//
-//    for(int i = 0; i < 2; i++)
-//        color += vec4(blinnPhongSpot(i, camCoords, Normal),1);
-//
-    FragColor = color;
+subroutine void RenderPassType();
+subroutine uniform RenderPassType RenderPass;
+
+subroutine (RenderPassType)
+void shadeWithShadow()
+{
+    vec3 ambient = Light.Intensity * Material.Ka;
+    vec3 diffAndSpec = phongModelDiffAndSpec();
+
+    ivec3 offsetCoord;
+    offsetCoord.xy = ivec2(mod(gl_FragCoord.xy, OffsetTexSize.xy));
+
+    // Lookup the texels nearby
+    float sum = 0.0, shadow = 1.0;
+    int samplesDiv2 = int(OffsetTexSize.z);
+    vec4 sc = ShadowCoord;
+
+    //Don't test points behind the light source.
+    if(sc.z >= 0) {
+        // Sum contributions from 4 texels around ShadowCoord
+        for(int i = 0; i < 4; i++){
+            offsetCoord.z = i;
+            vec4 offsets = texelFetch(OffsetTex, offsetCoord, 0) * Radius * ShadowCoord.w;
+
+            sc.xy = ShadowCoord.xy + offsets.xy;
+            sum += textureProj(ShadowMap, sc);
+            sc.xy = ShadowCoord.xy + offsets.zw;
+            sum += textureProj(ShadowMap, sc);
+        }
+        shadow = sum / 8.0;
+
+        if(shadow != 1.0 && shadow != 0.0){
+            for(int i = 4; i < samplesDiv2; i++){
+                offsetCoord.z = i;
+                vec4 offsets = texelFetch(OffsetTex, offsetCoord, 0) * Radius * ShadowCoord.w;
+
+                sc.xy = ShadowCoord.xy + offsets.xy;
+                sum += textureProj(ShadowMap, sc);
+                sc.xy = ShadowCoord.xy + offsets.zw;
+                sum += textureProj(ShadowMap, sc);
+            }
+            shadow = sum/float(samplesDiv2*2.0);
+        }
+        
+//        //Don't test points behind the light source.
+//        sum += textureProjOffset(ShadowMap, ShadowCoord, ivec2(-1, -1));
+//        sum += textureProjOffset(ShadowMap, ShadowCoord, ivec2(-1, 1));
+//        sum += textureProjOffset(ShadowMap, ShadowCoord, ivec2(1, 1));
+//        sum += textureProjOffset(ShadowMap, ShadowCoord, ivec2(1, -1));
+//        shadow = sum * 0.25;
+    }
+
+    //if the fragment is in shadow, use ambient
+    FragColor = vec4(ambient + diffAndSpec * shadow, 1.0);
+
+    //gamma correct
+    FragColor = pow(FragColor, vec4(1.0/2.2) );
+}
+
+//subroutine (RenderPassType)
+//void recordDepth()
+//{
+////does nothing yet, depth written automatically
+//}
+
+
+void main() {
+    RenderPass();
 }

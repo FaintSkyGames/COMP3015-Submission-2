@@ -80,6 +80,27 @@
     <None Include="shader\skybox.vert">
       <Filter>shaders</Filter>
     </None>
+    <None Include="shader\shadowVolume-render.fs">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shader\shadowVolume-render.vs">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shader\shadowVolume-comp.fs">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shader\shadowVolume-comp.vs">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shader\solid.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shader\solid.geom">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shader\solid.vert">
+      <Filter>shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="helper\scene.h">
