@@ -17,12 +17,13 @@
 class SceneBasic_Uniform : public Scene
 {
 private:
-    GLSLProgram volumeProg, renderProg, compProg;
+    GLSLProgram volumeProg, renderProg, compProg, toonProg;
     GLuint colorDepthFBO, fsQuad;
-    GLuint spotTex, brickTex;
+    GLuint spotTex, brickTex, fenceTex, ufoTex;
     
     Plane plane;
-    std::unique_ptr<ObjMesh> spot;
+    std::unique_ptr<ObjMesh> spot, ufo;
+    std::unique_ptr<ObjMesh> fenceMid, fenceMid2, fenceEnd, fenceCorner;
 
     glm::vec4 lightPos;
     float angle, tPrev, rotSpeed;

@@ -161,10 +161,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="shader\basic_uniform.frag" />
+    <None Include="shader\basic_uniform.geom" />
     <None Include="shader\basic_uniform.vert" />
     <None Include="shader\shadowVolume-comp.fs" />
     <None Include="shader\shadowVolume-comp.vs" />
     <None Include="shader\shadowVolume-render.fs" />
+    <None Include="shader\shadowVolume-render.geom" />
     <None Include="shader\shadowVolume-render.vs" />
     <None Include="shader\skybox.frag" />
     <None Include="shader\skybox.vert" />
