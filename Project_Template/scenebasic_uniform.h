@@ -6,6 +6,7 @@
 #include "helper/plane.h"
 #include "helper/objmesh.h"
 #include "helper/skybox.h"
+#include "helper/random.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -17,16 +18,17 @@
 class SceneBasic_Uniform : public Scene
 {
 private:
-    GLSLProgram volumeProg, renderProg, compProg, toonProg;
-    GLuint colorDepthFBO, fsQuad;
-    GLuint spotTex, brickTex, fenceTex, ufoTex;
+    GLSLProgram volumeProg, renderProg, compProg, flatProg;
+    GLuint colorDepthFBO, fsQuad, quad;
+    GLuint spotTex, brickTex, fenceTex, ufoTex, grassTex, mudTex;
+
+    Random rand;
     
-    Plane plane;
     std::unique_ptr<ObjMesh> spot, ufo;
-    std::unique_ptr<ObjMesh> fenceMid, fenceMid2, fenceEnd, fenceCorner;
+    std::unique_ptr<ObjMesh> fenceMid, fenceMid2, fenceEnd, fenceCorner, plane;
 
     glm::vec4 lightPos;
-    float angle, tPrev, rotSpeed;
+    float angle, tPrev, rotSpeed, time, deltaT;
 
     void setMatrices(GLSLProgram&);
 
@@ -34,6 +36,7 @@ private:
 
     void setupFBO();
     void drawScene(GLSLProgram&, bool);
+    void drawPlanes(GLSLProgram&);
     void pass1();
     void pass2();
     void pass3();

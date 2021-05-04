@@ -66,6 +66,12 @@
     <ClCompile Include="helper\skybox.cpp">
       <Filter>helper</Filter>
     </ClCompile>
+    <ClCompile Include="helper\noisetex.cpp">
+      <Filter>helper</Filter>
+    </ClCompile>
+    <ClCompile Include="helper\grid.cpp">
+      <Filter>helper</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="shader\skybox.frag">
@@ -105,6 +111,21 @@
       <Filter>shaders</Filter>
     </None>
     <None Include="shader\shadowVolume-render.geom">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shader\flat.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shader\flat.vert">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shader\cloudParticle.fs">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shader\cloudParticle.vs">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shader\flat.geom">
       <Filter>shaders</Filter>
     </None>
   </ItemGroup>
@@ -161,6 +182,15 @@
       <Filter>helper</Filter>
     </ClInclude>
     <ClInclude Include="helper\skybox.h">
+      <Filter>helper</Filter>
+    </ClInclude>
+    <ClInclude Include="helper\noisetex.h">
+      <Filter>helper</Filter>
+    </ClInclude>
+    <ClInclude Include="helper\particleutils.h">
+      <Filter>helper</Filter>
+    </ClInclude>
+    <ClInclude Include="helper\grid.h">
       <Filter>helper</Filter>
     </ClInclude>
   </ItemGroup>

@@ -148,6 +148,8 @@
     <ClCompile Include="glad.c" />
     <ClCompile Include="helper\glslprogram.cpp" />
     <ClCompile Include="helper\glutils.cpp" />
+    <ClCompile Include="helper\grid.cpp" />
+    <ClCompile Include="helper\noisetex.cpp" />
     <ClCompile Include="helper\objmesh.cpp" />
     <ClCompile Include="helper\plane.cpp" />
     <ClCompile Include="helper\skybox.cpp" />
@@ -163,6 +165,11 @@
     <None Include="shader\basic_uniform.frag" />
     <None Include="shader\basic_uniform.geom" />
     <None Include="shader\basic_uniform.vert" />
+    <None Include="shader\cloudParticle.fs" />
+    <None Include="shader\cloudParticle.vs" />
+    <None Include="shader\flat.frag" />
+    <None Include="shader\flat.geom" />
+    <None Include="shader\flat.vert" />
     <None Include="shader\shadowVolume-comp.fs" />
     <None Include="shader\shadowVolume-comp.vs" />
     <None Include="shader\shadowVolume-render.fs" />
@@ -179,7 +186,10 @@
     <ClInclude Include="helper\drawable.h" />
     <ClInclude Include="helper\glslprogram.h" />
     <ClInclude Include="helper\glutils.h" />
+    <ClInclude Include="helper\grid.h" />
+    <ClInclude Include="helper\noisetex.h" />
     <ClInclude Include="helper\objmesh.h" />
+    <ClInclude Include="helper\particleutils.h" />
     <ClInclude Include="helper\plane.h" />
     <ClInclude Include="helper\scene.h" />
     <ClInclude Include="helper\scenerunner.h" />

@@ -17,6 +17,8 @@ using std::endl;
 #include <glm/gtc/matrix_transform.hpp>
 #include "helper/torus.h"
 
+#include "helper/particleutils.h"
+#include "helper/noisetex.h"
 #include "helper/texture.h"
 
 using glm::vec3;
@@ -25,8 +27,7 @@ using glm::mat3;
 using glm::mat4;
 
 
-SceneBasic_Uniform::SceneBasic_Uniform() : rotSpeed(0.1f), tPrev(0),
-plane(10.0f, 10.0f, 2, 2, 5.0f, 5.0f)
+SceneBasic_Uniform::SceneBasic_Uniform() : rotSpeed(0.1f), tPrev(0)
 {
     spot = ObjMesh::loadWithAdjacency("media/spot/spot_triangulated.obj");
     fenceMid = ObjMesh::loadWithAdjacency("media/Fence/fence2_middle2.obj");
@@ -34,6 +35,7 @@ plane(10.0f, 10.0f, 2, 2, 5.0f, 5.0f)
     fenceEnd = ObjMesh::loadWithAdjacency("media/Fence/fence2_end.obj");
     fenceCorner = ObjMesh::loadWithAdjacency("media/Fence/fence2_corner2.obj");
     ufo = ObjMesh::loadWithAdjacency("media/UFO/ufo.obj");
+    plane = ObjMesh::loadWithAdjacency("media/Plane.obj");
 }
 
 void SceneBasic_Uniform::initScene()
@@ -43,11 +45,12 @@ void SceneBasic_Uniform::initScene()
     glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
     glClearStencil(0);
 
+    // Enable depth test
     glEnable(GL_DEPTH_TEST);
 
     angle = 0.0f;
 
-    //setup framebuffer object
+    // Setup framebuffer object
     setupFBO();
 
     renderProg.use();
@@ -71,12 +74,21 @@ void SceneBasic_Uniform::initScene()
 
     glBindVertexArray(0);
 
-    // Load textures
     glActiveTexture(GL_TEXTURE2);
     spotTex = Texture::loadTexture("media/spot/spot_texture.png");
     brickTex = Texture::loadTexture("media/brick1.jpg");
     fenceTex = Texture::loadTexture("media/Fence/fence2.png");
     ufoTex = Texture::loadTexture("media/UFO/ufo.png");
+    grassTex = Texture::loadTexture("media/textures/GrassGreenTexture0004.jpg");
+    mudTex = Texture::loadTexture("media/textures/DirtCrack.jpg");
+
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, grassTex);
+
+    // Generate noise
+    GLuint noiseTex = NoiseTex::generate2DTex(6.0f);
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_2D, noiseTex);
 
     updateLight();
 
@@ -89,6 +101,18 @@ void SceneBasic_Uniform::initScene()
     renderProg.setUniform("LightPosition", vec4(0.0f, 0.0f, 0.0f, 1.0f));
     renderProg.setUniform("Ka", 0.2f, 0.2f, 0.2f);
     renderProg.setUniform("LightIntensity", vec3(1.0f));
+
+    flatProg.use();
+    flatProg.setUniform("Tex", 2);
+    flatProg.setUniform("Tex2", 3);
+    flatProg.setUniform("NoiseTex", 4);
+    flatProg.setUniform("EdgeWidth", 0.012f);
+    flatProg.setUniform("PctExtend", 0.25f);
+    //renderProg.setUniform("LineColor", vec4(0.05f, 1.0f, 0.05f, 1.0f));
+    flatProg.setUniform("Kd", 0.7f, 0.5f, 0.2f);
+    flatProg.setUniform("LightPosition", vec4(0.0f, 0.0f, 0.0f, 1.0f));
+    flatProg.setUniform("Ka", 0.2f, 0.2f, 0.2f);
+    flatProg.setUniform("LightIntensity", vec3(1.0f));
 
     compProg.use();
     compProg.setUniform("DiffSpecTex", 0);
@@ -166,13 +190,13 @@ void SceneBasic_Uniform::compile()
         // Final composite shader
         compProg.compileShader("shader/shadowVolume-comp.vs");
         compProg.compileShader("shader/shadowVolume-comp.fs");
-        compProg.link();
+        compProg.link(); 
 
-        // Toon shader
-        toonProg.compileShader("shader/basic_uniform.vert");
-        toonProg.compileShader("shader/basic_uniform.frag");
-        toonProg.compileShader("shader/basic_uniform.geom");
-        toonProg.link();
+        // Ground shader
+        flatProg.compileShader("shader/flat.vert");
+        flatProg.compileShader("shader/flat.frag");
+        flatProg.compileShader("shader/flat.geom");
+        flatProg.link();
     }
     catch (GLSLProgramException& e) {
         cerr << e.what() << endl;
@@ -209,13 +233,14 @@ void SceneBasic_Uniform::update( float t )
 }
 
 void SceneBasic_Uniform::render()
-{    
+{   
     pass1();
     glFlush();
     pass2();
     glFlush();
-    pass3();
-    
+    pass3();   
+    /*glFlush();
+    drawPlanes();*/
 }
 
 // Renders geometry normally with shading.
@@ -231,6 +256,7 @@ void SceneBasic_Uniform::pass1()
 
     renderProg.use();
     renderProg.setUniform("LightPosition", view * lightPos);
+    flatProg.setUniform("LightPosition", view * lightPos);
 
     glBindFramebuffer(GL_FRAMEBUFFER, colorDepthFBO);
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
@@ -299,6 +325,7 @@ void SceneBasic_Uniform::pass3()
     glEnable(GL_DEPTH_TEST);
 }
 
+
 void SceneBasic_Uniform::drawScene(GLSLProgram& prog, bool onlyShadowCasters) 
 {
     vec3 color;
@@ -366,62 +393,97 @@ void SceneBasic_Uniform::drawScene(GLSLProgram& prog, bool onlyShadowCasters)
         prog.setUniform("Ka", vec3(0.1f));     
         prog.setUniform("Shininess", 1.0f);
         prog.setUniform("PctExtend", 0.0f);
-        renderProg.setUniform("EdgeWidth", 0.008f);
-        
-        model = mat4(1.0f);
-        model = glm::translate(model, vec3(-10.0f, 0.0f, -10.0f));
-        model = glm::rotate(model, glm::radians(90.0f), vec3(0.0f, 1.0f, 0.0f));
-        model = glm::scale(model, vec3(0.05f));
-        setMatrices(prog);
-        fenceCorner->render();
-
-        model = mat4(1.0f);
-        model = glm::translate(model, vec3(-10.0f, 0.0f, -7.5f));
-        model = glm::rotate(model, glm::radians(90.0f), vec3(0.0f, 1.0f, 0.0f));
-        model = glm::scale(model, vec3(0.05f));
-        setMatrices(prog);
-        fenceMid->render();
-
-        model = mat4(1.0f);
-        model = glm::translate(model, vec3(-7.5f, 0.0f, -10.0f));
-        model = glm::rotate(model, glm::radians(0.0f), vec3(0.0f, 1.0f, 0.0f));
-        model = glm::scale(model, vec3(0.05f));
-        setMatrices(prog);
-        fenceMid->render();
-
-        model = mat4(1.0f);
-        model = glm::translate(model, vec3(-10.0f, 0.0f, -5.0f));
-        model = glm::rotate(model, glm::radians(90.0f), vec3(0.0f, 1.0f, 0.0f));
-        model = glm::scale(model, vec3(0.05f));
-        setMatrices(prog);
-        fenceMid2->render();
-
-        model = mat4(1.0f);
-        model = glm::translate(model, vec3(-5.0f, 0.0f, -10.0f));
-        model = glm::rotate(model, glm::radians(0.0f), vec3(0.0f, 1.0f, 0.0f));
-        model = glm::scale(model, vec3(0.05f));
-        setMatrices(prog);
-        fenceMid2->render();
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="prog"></param>
-        /// <param name="onlyShadowCasters"></param>
-        model = mat4(1.0f);
-        model = glm::translate(model, vec3(-0.0f, 0.0f, -10.0f));
-        model = glm::rotate(model, glm::radians(180.0f), vec3(0.0f, 1.0f, 0.0f));
-        model = glm::scale(model, vec3(0.05f));
-        setMatrices(prog);
-        fenceEnd->render();
-
-        model = mat4(1.0f);
-        model = glm::translate(model, vec3(-10.0f, 0.0f, -0.0f));
-        model = glm::rotate(model, glm::radians(90.0f), vec3(0.0f, 1.0f, 0.0f));
-        model = glm::scale(model, vec3(0.05f));
-        setMatrices(prog);
-        fenceEnd->render();
+        renderProg.setUniform("EdgeWidth", 0.008f);    
     }
+
+    model = mat4(1.0f);
+    model = glm::translate(model, vec3(-10.0f, 0.0f, -10.0f));
+    model = glm::rotate(model, glm::radians(90.0f), vec3(0.0f, 1.0f, 0.0f));
+    model = glm::scale(model, vec3(0.05f));
+    setMatrices(prog);
+    fenceCorner->render();
+
+    model = mat4(1.0f);
+    model = glm::translate(model, vec3(-10.0f, 0.0f, -7.5f));
+    model = glm::rotate(model, glm::radians(90.0f), vec3(0.0f, 1.0f, 0.0f));
+    model = glm::scale(model, vec3(0.05f));
+    setMatrices(prog);
+    fenceMid->render();
+
+    model = mat4(1.0f);
+    model = glm::translate(model, vec3(-7.5f, 0.0f, -10.0f));
+    model = glm::rotate(model, glm::radians(0.0f), vec3(0.0f, 1.0f, 0.0f));
+    model = glm::scale(model, vec3(0.05f));
+    setMatrices(prog);
+    fenceMid->render();
+
+    model = mat4(1.0f);
+    model = glm::translate(model, vec3(-10.0f, 0.0f, -5.0f));
+    model = glm::rotate(model, glm::radians(90.0f), vec3(0.0f, 1.0f, 0.0f));
+    model = glm::scale(model, vec3(0.05f));
+    setMatrices(prog);
+    fenceMid2->render();
+
+    model = mat4(1.0f);
+    model = glm::translate(model, vec3(-5.0f, 0.0f, -10.0f));
+    model = glm::rotate(model, glm::radians(0.0f), vec3(0.0f, 1.0f, 0.0f));
+    model = glm::scale(model, vec3(0.05f));
+    setMatrices(prog);
+    fenceMid2->render();
+
+    model = mat4(1.0f);
+    model = glm::translate(model, vec3(-0.0f, 0.0f, -10.0f));
+    model = glm::rotate(model, glm::radians(180.0f), vec3(0.0f, 1.0f, 0.0f));
+    model = glm::scale(model, vec3(0.05f));
+    setMatrices(prog);
+    fenceEnd->render();
+
+    model = mat4(1.0f);
+    model = glm::translate(model, vec3(-10.0f, 0.0f, -0.0f));
+    model = glm::rotate(model, glm::radians(90.0f), vec3(0.0f, 1.0f, 0.0f));
+    model = glm::scale(model, vec3(0.05f));
+    setMatrices(prog);
+    fenceEnd->render();
+
+    if (!onlyShadowCasters) {
+        color = vec3(0.5f);
+
+        flatProg.use();
+
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, mudTex);  
+
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, grassTex);
+
+        flatProg.setUniform("LightPosition", vec4(0.0f, 0.0f, 0.0f, 1.0f));
+        flatProg.setUniform("LightIntensity", vec3(1.0f));
+        flatProg.setUniform("Kd", color);
+        flatProg.setUniform("Ks", vec3(0.0f));
+        flatProg.setUniform("Ka", vec3(0.1f));
+        flatProg.setUniform("Shininess", 1.0f);
+        flatProg.setUniform("PctExtend", 0.0f);
+        flatProg.setUniform("EdgeWidth", 0.008f);
+
+        model = mat4(1.0f);
+        model = glm::translate(model, vec3(-5.0f, 0.25f, -5.0f));        
+        setMatrices(flatProg);
+        plane->render();
+
+        model = mat4(1.0f);
+        model = glm::translate(model, vec3(-15.0f, 5.0f, -5.0f));
+        model = glm::rotate(model, glm::radians(-90.0f), vec3(0.0f, 0.0f, 1.0f));
+        setMatrices(flatProg);
+        plane->render();
+
+        model = mat4(1.0f);
+        model = glm::translate(model, vec3(-5.0f, 5.0f, -15.0f));
+        model = glm::rotate(model, glm::radians(90.0f), vec3(1.0f, 0.0f, 0.0f));
+        setMatrices(flatProg);
+        plane->render();
+        model = mat4(1.0f);
+    }
+
 }
 
 void SceneBasic_Uniform::setMatrices(GLSLProgram& prog)
@@ -439,4 +501,6 @@ void SceneBasic_Uniform::resize(int w, int h)
     glViewport(0, 0, w, h);
     width = w;
     height = h;
+
+    //projection = glm::perspective(glm::radians(60.0f), (float)w / h, 0.3f, 100.0f);
 }
