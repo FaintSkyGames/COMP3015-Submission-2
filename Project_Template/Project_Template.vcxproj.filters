@@ -74,12 +74,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="shader\skybox.frag">
-      <Filter>shaders</Filter>
-    </None>
-    <None Include="shader\skybox.vert">
-      <Filter>shaders</Filter>
-    </None>
     <None Include="shader\shadowVolume-render.fs">
       <Filter>shaders</Filter>
     </None>
@@ -101,15 +95,6 @@
     <None Include="shader\solid.vert">
       <Filter>shaders</Filter>
     </None>
-    <None Include="shader\basic_uniform.geom">
-      <Filter>shaders</Filter>
-    </None>
-    <None Include="shader\basic_uniform.vert">
-      <Filter>shaders</Filter>
-    </None>
-    <None Include="shader\basic_uniform.frag">
-      <Filter>shaders</Filter>
-    </None>
     <None Include="shader\shadowVolume-render.geom">
       <Filter>shaders</Filter>
     </None>
@@ -119,13 +104,13 @@
     <None Include="shader\flat.vert">
       <Filter>shaders</Filter>
     </None>
-    <None Include="shader\cloudParticle.fs">
-      <Filter>shaders</Filter>
-    </None>
-    <None Include="shader\cloudParticle.vs">
-      <Filter>shaders</Filter>
-    </None>
     <None Include="shader\flat.geom">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shader\blinnPhongSpot.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shader\blinnPhongSpot.vert">
       <Filter>shaders</Filter>
     </None>
   </ItemGroup>

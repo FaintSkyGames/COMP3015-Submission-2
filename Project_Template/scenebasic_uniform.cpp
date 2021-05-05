@@ -49,6 +49,9 @@ void SceneBasic_Uniform::initScene()
     glEnable(GL_DEPTH_TEST);
 
     angle = 0.0f;
+    ufoRotation = 0.0f;
+    ufoHeight = 0.0f;
+    increaseHeight = true;
 
     // Setup framebuffer object
     setupFBO();
@@ -76,11 +79,12 @@ void SceneBasic_Uniform::initScene()
 
     glActiveTexture(GL_TEXTURE2);
     spotTex = Texture::loadTexture("media/spot/spot_texture.png");
-    brickTex = Texture::loadTexture("media/brick1.jpg");
     fenceTex = Texture::loadTexture("media/Fence/fence2.png");
     ufoTex = Texture::loadTexture("media/UFO/ufo.png");
     grassTex = Texture::loadTexture("media/textures/GrassGreenTexture0004.jpg");
     mudTex = Texture::loadTexture("media/textures/DirtCrack.jpg");
+    skyTex = Texture::loadTexture("media/textures/SkySquare.jpg");
+    cloudTex = Texture::loadTexture("media/textures/whiteSquare.png");
 
     glActiveTexture(GL_TEXTURE3);
     glBindTexture(GL_TEXTURE_2D, grassTex);
@@ -96,7 +100,6 @@ void SceneBasic_Uniform::initScene()
     renderProg.setUniform("Tex", 2);
     renderProg.setUniform("EdgeWidth", 0.012f);
     renderProg.setUniform("PctExtend", 0.25f);
-    //renderProg.setUniform("LineColor", vec4(0.05f, 1.0f, 0.05f, 1.0f));
     renderProg.setUniform("Kd", 0.7f, 0.5f, 0.2f);
     renderProg.setUniform("LightPosition", vec4(0.0f, 0.0f, 0.0f, 1.0f));
     renderProg.setUniform("Ka", 0.2f, 0.2f, 0.2f);
@@ -108,7 +111,6 @@ void SceneBasic_Uniform::initScene()
     flatProg.setUniform("NoiseTex", 4);
     flatProg.setUniform("EdgeWidth", 0.012f);
     flatProg.setUniform("PctExtend", 0.25f);
-    //renderProg.setUniform("LineColor", vec4(0.05f, 1.0f, 0.05f, 1.0f));
     flatProg.setUniform("Kd", 0.7f, 0.5f, 0.2f);
     flatProg.setUniform("LightPosition", vec4(0.0f, 0.0f, 0.0f, 1.0f));
     flatProg.setUniform("Ka", 0.2f, 0.2f, 0.2f);
@@ -123,6 +125,36 @@ void SceneBasic_Uniform::initScene()
 void SceneBasic_Uniform::updateLight()
 {
     lightPos = vec4(5.0f * vec3(cosf(angle) * 7.5f, 1.5f, sinf(angle) * 7.5f), 1.0f); // World coords
+}
+
+void SceneBasic_Uniform::updateUFO()
+{
+    //lightPos = vec4(5.0f * vec3(cosf(angle) * 7.5f, 1.5f, sinf(angle) * 7.5f), 1.0f); // World coords
+    ufoRotation += 3.0f;
+
+    if (ufoRotation >= 360.0f)
+    {
+        ufoRotation = ufoRotation - 360.0f;
+    };
+
+    if (increaseHeight == true)
+    {
+        ufoHeight += 0.002f;
+
+        if (ufoHeight >= 0.1f)
+        {
+            increaseHeight = false;
+        }
+    }
+    else
+    {
+        ufoHeight -= 0.002f;    
+
+        if (ufoHeight <= -0.1f)
+        {
+            increaseHeight = true;
+        }
+    }
 }
 
 void SceneBasic_Uniform::setupFBO() 
@@ -229,6 +261,7 @@ void SceneBasic_Uniform::update( float t )
         }
 
         updateLight();
+        updateUFO();
     }    
 }
 
@@ -239,8 +272,6 @@ void SceneBasic_Uniform::render()
     pass2();
     glFlush();
     pass3();   
-    /*glFlush();
-    drawPlanes();*/
 }
 
 // Renders geometry normally with shading.
@@ -378,8 +409,9 @@ void SceneBasic_Uniform::drawScene(GLSLProgram& prog, bool onlyShadowCasters)
     }
 
     model = mat4(1.0f);
-    model = glm::translate(model, vec3(-5.0f, 4.0f, -5.0f));
+    model = glm::translate(model, vec3(-5.0f, 4.0f + ufoHeight, -5.0f));
     model = glm::rotate(model, glm::radians(-90.0f), vec3(1.0f, 0.0f, 0.0f));
+    model = glm::rotate(model, glm::radians(ufoRotation), vec3(0.0f, 0.0f, 1.0f));
     model = glm::scale(model, vec3(1.5f));
     setMatrices(prog);
     ufo->render();
@@ -432,6 +464,20 @@ void SceneBasic_Uniform::drawScene(GLSLProgram& prog, bool onlyShadowCasters)
     fenceMid2->render();
 
     model = mat4(1.0f);
+    model = glm::translate(model, vec3(-10.0f, 0.0f, -2.5f));
+    model = glm::rotate(model, glm::radians(90.0f), vec3(0.0f, 1.0f, 0.0f));
+    model = glm::scale(model, vec3(0.05f));
+    setMatrices(prog);
+    fenceMid->render();
+
+    model = mat4(1.0f);
+    model = glm::translate(model, vec3(-2.5f, 0.0f, -10.0f));
+    model = glm::rotate(model, glm::radians(0.0f), vec3(0.0f, 1.0f, 0.0f));
+    model = glm::scale(model, vec3(0.05f));
+    setMatrices(prog);
+    fenceMid->render();
+
+    model = mat4(1.0f);
     model = glm::translate(model, vec3(-0.0f, 0.0f, -10.0f));
     model = glm::rotate(model, glm::radians(180.0f), vec3(0.0f, 1.0f, 0.0f));
     model = glm::scale(model, vec3(0.05f));
@@ -445,6 +491,7 @@ void SceneBasic_Uniform::drawScene(GLSLProgram& prog, bool onlyShadowCasters)
     setMatrices(prog);
     fenceEnd->render();
 
+    // Output the planes
     if (!onlyShadowCasters) {
         color = vec3(0.5f);
 
@@ -469,6 +516,12 @@ void SceneBasic_Uniform::drawScene(GLSLProgram& prog, bool onlyShadowCasters)
         model = glm::translate(model, vec3(-5.0f, 0.25f, -5.0f));        
         setMatrices(flatProg);
         plane->render();
+
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, skyTex);
+
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, cloudTex);
 
         model = mat4(1.0f);
         model = glm::translate(model, vec3(-15.0f, 5.0f, -5.0f));
@@ -501,6 +554,4 @@ void SceneBasic_Uniform::resize(int w, int h)
     glViewport(0, 0, w, h);
     width = w;
     height = h;
-
-    //projection = glm::perspective(glm::radians(60.0f), (float)w / h, 0.3f, 100.0f);
 }

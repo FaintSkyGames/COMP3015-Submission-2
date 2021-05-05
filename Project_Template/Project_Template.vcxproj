@@ -162,11 +162,8 @@
     <ClCompile Include="scenebasic_uniform.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="shader\basic_uniform.frag" />
-    <None Include="shader\basic_uniform.geom" />
-    <None Include="shader\basic_uniform.vert" />
-    <None Include="shader\cloudParticle.fs" />
-    <None Include="shader\cloudParticle.vs" />
+    <None Include="shader\blinnPhongSpot.frag" />
+    <None Include="shader\blinnPhongSpot.vert" />
     <None Include="shader\flat.frag" />
     <None Include="shader\flat.geom" />
     <None Include="shader\flat.vert" />
@@ -175,8 +172,6 @@
     <None Include="shader\shadowVolume-render.fs" />
     <None Include="shader\shadowVolume-render.geom" />
     <None Include="shader\shadowVolume-render.vs" />
-    <None Include="shader\skybox.frag" />
-    <None Include="shader\skybox.vert" />
     <None Include="shader\solid.frag" />
     <None Include="shader\solid.geom" />
     <None Include="shader\solid.vert" />

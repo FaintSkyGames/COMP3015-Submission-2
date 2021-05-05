@@ -20,7 +20,7 @@ class SceneBasic_Uniform : public Scene
 private:
     GLSLProgram volumeProg, renderProg, compProg, flatProg;
     GLuint colorDepthFBO, fsQuad, quad;
-    GLuint spotTex, brickTex, fenceTex, ufoTex, grassTex, mudTex;
+    GLuint spotTex, fenceTex, ufoTex, grassTex, mudTex, cloudTex, skyTex;
 
     Random rand;
     
@@ -28,6 +28,8 @@ private:
     std::unique_ptr<ObjMesh> fenceMid, fenceMid2, fenceEnd, fenceCorner, plane;
 
     glm::vec4 lightPos;
+    float ufoRotation, ufoHeight;
+    bool increaseHeight;
     float angle, tPrev, rotSpeed, time, deltaT;
 
     void setMatrices(GLSLProgram&);
@@ -36,11 +38,11 @@ private:
 
     void setupFBO();
     void drawScene(GLSLProgram&, bool);
-    void drawPlanes(GLSLProgram&);
     void pass1();
     void pass2();
     void pass3();
     void updateLight();
+    void updateUFO();
 
 public:
     SceneBasic_Uniform();
