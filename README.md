@@ -1,5 +1,4 @@
-# 2021-COMP3015-CW1 Initial Prototype
-## Geraldine Fowles - Id: 10636368 
+# 2021-COMP3015-CW1 Initial Prototype 
 
 ### Development Details
 * Coded in Visual Studio 2019 Version 16.8
@@ -27,7 +26,7 @@ The third program is a composite shader.
 Dynamism has been added with a moving light. This updates the light position if the program is animating. Dynamism is also added through making the UFO rotate and move up and down.
 
 ### Current bugs & code that should be changed
-* Error appears in console when running. Doesn’t affect output currently.
+* Error appears in console when running. Doesnâ€™t affect output currently.
 
 ### Link to summary video
 https://youtu.be/nuOrvnTD2J4
